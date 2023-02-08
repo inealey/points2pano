@@ -2,7 +2,7 @@
 ### Isaac Nealey 2023 ###
 ### project a LiDAR point cloud to a sphere to see panorama
 ### assumes 64-bit floating-point coordinates
-### and 8-bit integer RGB channels
+### and 16-bit integer RGB channels
 
 import laspy
 import numpy as np
@@ -47,7 +47,7 @@ def releaseShared(name):
 def drawPoints(start, length, canvas_shape, theta, phi, radius, color):
     ## access the shared array
     shm_output = shared_memory.SharedMemory(name = CANVAS_ARRAY_NAME)
-    image = np.ndarray(canvas_shape, dtype = np.uint8, buffer = shm_output.buf)
+    image = np.ndarray(canvas_shape, dtype = np.uint16, buffer = shm_output.buf)
     ## project each point,
     ## draw pts with subpixel coordinates
     for i in tqdm(range(start, start + length)):
@@ -94,14 +94,15 @@ if __name__ == '__main__':
     
     ## skybox or black background.
     if not args.skybox:
-        background = np.zeros([height, width, 3])
+        background = np.zeros([height, width, 3], dtype = np.uint16)
     else:
         try:
+            ## scale to 16-bit color
             background = cv2.imread(SKYBOX_PATH)
-            background = np.array(cv2.resize(background, (width, height)))
+            background = np.array(cv2.resize(background, (width, height)) / (2**8) * (2**16), dtype = np.uint16)
         except cv2.error as e:
             print(e)
-            background = np.zeros([height, width, 3])
+            background = np.zeros([height, width, 3], dtype = np.uint16)
             
     ## absolute distances
     r = np.sqrt(np.array(las.x) ** 2 + np.array(las.y) ** 2 +
@@ -120,13 +121,13 @@ if __name__ == '__main__':
                       dtype = np.uint64) # size of glyph
     
     color = np.swapaxes(np.array((las.blue, las.green, las.red),
-                                 dtype = np.uint8), 0, 1) # color of glyph
+                                 dtype = np.uint16), 0, 1) # color of glyph
     
     del las ## explicit free, don't need point cloud anymore
     
     ## allocate shared memory for output array
     shm_output = createSharedMemoryArray(background,
-                                              CANVAS_ARRAY_NAME, np.uint8)
+                                              CANVAS_ARRAY_NAME, np.uint16)
     
     ## draw the points
     ## compute start and length for indexing points array 
@@ -144,7 +145,7 @@ if __name__ == '__main__':
         p.join()
     
     ## access the shared memory
-    image = np.ndarray(out_shape, dtype = np.uint8, buffer = shm_output.buf)
+    image = np.ndarray(out_shape, dtype = np.uint16, buffer = shm_output.buf)
     
     ## save image
     try:
