@@ -15,14 +15,14 @@ from multiprocessing import Process, shared_memory, cpu_count
 # constants
 NUM_WORKERS = cpu_count()
 CANVAS_ARRAY_NAME = 'npsharedcanvas'
-SKYBOX_PATH = 'skybox/skybox4.jpg'
+SKYBOX_PATH = 'skybox/skybox2.jpg'
 PRECISION = 16 ## how far to bitshift when plotting pts
 ## 16 is approx precision of a 64-bit float
 FACTOR = 2 ** PRECISION ## bitshift factor (sig figs)
 
 ## create shared memory block from numpy-like object
 ## TODO: still some issues with shm on windows
-def create_shared_memory_nparray(data, name, dtype):
+def createSharedMemoryArray(data, name, dtype):
     d_size = np.dtype(dtype).itemsize * np.prod(data.shape)
     shm = shared_memory.SharedMemory(create=True, size=d_size, name=name)
     dst = np.ndarray(shape=data.shape, dtype=dtype, buffer=shm.buf)
@@ -30,14 +30,12 @@ def create_shared_memory_nparray(data, name, dtype):
     return shm
 
 ## free a shared memory block
-def release_shared(name):
+def releaseShared(name):
     shm = shared_memory.SharedMemory(name=name)
     shm.close()
     shm.unlink()
 
-## project an set of points to the unit sphere
-## return spherical coordinates and
-## preserve intensity and color info
+## draw circle glyphs on a 2d "canvas"
 ## inputs: 
 ## start: index into arrays, starting point for reading/writing
 ## length: how far into the arrays to read/write
@@ -46,7 +44,7 @@ def release_shared(name):
 ## phi: array of phi values
 ## radius: array of radii
 ## color: array of BGR colors
-def projectPoints(start, length, canvas_shape, theta, phi, radius, color):
+def drawPoints(start, length, canvas_shape, theta, phi, radius, color):
     ## access the shared array
     shm_output = shared_memory.SharedMemory(name=CANVAS_ARRAY_NAME)
     image = np.ndarray(canvas_shape, dtype=np.uint8, buffer=shm_output.buf)
@@ -71,14 +69,14 @@ if __name__ == '__main__':
                 help='name of output image file')
     parser.add_argument('-n', '--threads', type=int, default=1, 
                 help='number of threads')
-    parser.add_argument('-l', '--log', type=str, default='WARNING', 
-                help='logging level')
     parser.add_argument('-y', '--height', type=int, default=4320,
                 help='size (height) of the output image. width = 2 * height')
     parser.add_argument('-s', '--size', type=int, default=3, 
-                help='point radius in pixels')
-    parser.add_argument('--skybox', action='store_true', default=True)
-    parser.add_argument('--no-skybox', dest='skybox', action='store_false')
+                help='point size multiplier')
+    parser.add_argument('--skybox', action='store_true', default=True,
+                help='draw sky backgound behind point cloud')
+    parser.add_argument('--no-skybox', dest='skybox', action='store_false',
+                help='don\'t include the skybox')
     args = parser.parse_args()
     
     if args.threads > NUM_WORKERS: exit('too many threads requested')
@@ -104,9 +102,9 @@ if __name__ == '__main__':
             print(e)
             background = np.zeros([height, width, 3])
             
-    ## compute spherical coordinates as vectors
+    ## absolute distances
     r = np.sqrt(np.array(las.x) ** 2 + np.array(las.y) ** 2 +
-                np.array(las.z) ** 2) ## absolute distances
+                np.array(las.z) ** 2) 
     
     r_norm = (r - min(r)) / (max(r) - min(r))  ## normalized. 0=close 1=far.
     
@@ -125,20 +123,18 @@ if __name__ == '__main__':
     
     del las ## explicit free, don't need point cloud anymore
     
-    ## allocate shared memory for output array and distance vector
-    shm_output = create_shared_memory_nparray(background,
+    ## allocate shared memory for output array
+    shm_output = createSharedMemoryArray(background,
                                               CANVAS_ARRAY_NAME, np.uint8)
     
-    ## project to spherical coordinates
+    ## draw the points
     ## compute start and length for indexing points array 
     for i in range(args.threads):
         start = floor(i * point_count / args.threads)
         length = floor(point_count * (i + 1) / args.threads) - \
             floor(point_count * i / args.threads)
-        
-        p = Process(target = projectPoints,
+        p = Process(target = drawPoints,
                 args = (start, length, out_shape, theta, phi, radius, color))
-        
         procs.append(p)
         p.start()
     
@@ -156,7 +152,7 @@ if __name__ == '__main__':
         print(e)
             
     ## clean up shm
-    release_shared(CANVAS_ARRAY_NAME)
+    releaseShared(CANVAS_ARRAY_NAME)
     
 ## REFERENCE:
 ## https://stackoverflow.com/questions/15658145/how-to-share-work-roughly-evenly-between-processes-in-mpi-despite-the-array-size
