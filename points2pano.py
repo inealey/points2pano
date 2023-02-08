@@ -65,7 +65,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         prog = 'points2pano',
         description = 'project point clouds to 360 photo sphere' )
-    parser.add_argument('-i', '--input', type=str, default='example.las', 
+    parser.add_argument('-i', '--input', type=str, default='example/example.las', 
                 help='path to .las/.laz LiDAR point cloud file')
     parser.add_argument('-o', '--output', type=str, default='output.png', 
                 help='name of output image file')
