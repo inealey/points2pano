@@ -138,7 +138,7 @@ if __name__ == '__main__':
         procs.append(p)
         p.start()
     
-    # complete the projection processes
+    # join the drawing procs
     for p in procs:
         p.join()
     
