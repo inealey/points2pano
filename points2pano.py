@@ -1,8 +1,9 @@
 ### POINTS2PANO ###
 ### Isaac Nealey 2023 ###
 ### project a LiDAR point cloud to a sphere to see panorama
-### assumes 64-bit floating-point coordinates
-### and 16-bit integer RGB channels
+### assumes LAS/LAZ file contains:
+### 64-bit floating-point coordinates
+### 16-bit integer RGB channels
 
 import laspy
 import numpy as np
@@ -97,9 +98,11 @@ if __name__ == '__main__':
         background = np.zeros([height, width, 3], dtype = np.uint16)
     else:
         try:
-            ## scale to 16-bit color
             background = cv2.imread(SKYBOX_PATH)
-            background = np.array(cv2.resize(background, (width, height)) / (2**8) * (2**16), dtype = np.uint16)
+            ## scale 8-bit skybox to 16-bit color.
+            ## !! don't do this w/16-bit skybox !!
+            background = np.array(cv2.resize(background,
+                        (width, height)) / (2**8) * (2**16), dtype = np.uint16)
         except cv2.error as e:
             print(e)
             background = np.zeros([height, width, 3], dtype = np.uint16)
