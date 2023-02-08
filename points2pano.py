@@ -24,14 +24,14 @@ FACTOR = 2 ** PRECISION ## bitshift factor (sig figs)
 ## TODO: still some issues with shm on windows
 def createSharedMemoryArray(data, name, dtype):
     d_size = np.dtype(dtype).itemsize * np.prod(data.shape)
-    shm = shared_memory.SharedMemory(create=True, size=d_size, name=name)
-    dst = np.ndarray(shape=data.shape, dtype=dtype, buffer=shm.buf)
+    shm = shared_memory.SharedMemory(create = True, size = d_size, name = name)
+    dst = np.ndarray(shape = data.shape, dtype = dtype, buffer = shm.buf)
     dst[:] = data[:]
     return shm
 
 ## free a shared memory block
 def releaseShared(name):
-    shm = shared_memory.SharedMemory(name=name)
+    shm = shared_memory.SharedMemory(name = name)
     shm.close()
     shm.unlink()
 
@@ -46,18 +46,19 @@ def releaseShared(name):
 ## color: array of BGR colors
 def drawPoints(start, length, canvas_shape, theta, phi, radius, color):
     ## access the shared array
-    shm_output = shared_memory.SharedMemory(name=CANVAS_ARRAY_NAME)
-    image = np.ndarray(canvas_shape, dtype=np.uint8, buffer=shm_output.buf)
+    shm_output = shared_memory.SharedMemory(name = CANVAS_ARRAY_NAME)
+    image = np.ndarray(canvas_shape, dtype = np.uint8, buffer = shm_output.buf)
     ## project each point,
     ## draw pts with subpixel coordinates
-    for i in tqdm(range(start, start+length)):
+    for i in tqdm(range(start, start + length)):
         cv2.circle(image,
             (theta[i], phi[i]),
             radius = radius[i],
             color = (int(color[i][0]), int(color[i][1]), int(color[i][2])),
             thickness = cv2.FILLED,
             shift = PRECISION )
-        
+
+
 if __name__ == '__main__':
     ## set up argparser
     parser = argparse.ArgumentParser(
@@ -143,7 +144,7 @@ if __name__ == '__main__':
         p.join()
     
     ## access the shared memory
-    image = np.ndarray(out_shape, dtype=np.uint8, buffer=shm_output.buf)
+    image = np.ndarray(out_shape, dtype = np.uint8, buffer = shm_output.buf)
     
     ## save image
     try:
