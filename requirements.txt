@@ -1,0 +1,3 @@
+laspy[laszip]
+opencv-python
+tqdm
