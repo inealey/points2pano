@@ -25,14 +25,17 @@ python3 points2pano.py -s 10
 This will produce an image from the included example point cloud located at `examples/example.las`. 
 the `-s` flag increases the default point size a bit because the example is intentionally sparse, ~300,000 points.
 That should produce an image like this:
+
 ![Sparse Demo](example/demo_subsampled.jpg)
 
 A full-resolution TLS scan (this one has 7.5M points) results in an image like this:
+
 ![Fullres Demo](example/demo_fullres.jpg)
  
 The image files may be opened with any 360 panorama viewer. Many standalone, web-based, and mobile-based applications are out there.
 These programs "wrap" our equirectangular projected panorama back around a sphere and provide a viewport looking from the origin out towards the sphere.
-This results in a natural looking view of the point cloud which simulates standing where the LiDAR sensor was placed.
+This results in a natural looking view of the point cloud which simulates standing where the LiDAR sensor was placed:
+
 ![Viewport](example/viewport.jpg)
 
 ### Usage:
