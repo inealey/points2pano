@@ -12,6 +12,7 @@ import cv2
 import argparse
 from tqdm import tqdm
 from multiprocessing import Process, shared_memory, cpu_count
+import subprocess
 
 # constants
 NUM_WORKERS = cpu_count()
@@ -159,25 +160,44 @@ if __name__ == '__main__':
 
     ## force 8 bit color
     ## TODO make this an option, not every time. lots of places to change :(
-    #image = np.array(image / (2**16) * (2**8), dtype=np.uint8)
-
-
+    image = np.array(image / (2**16) * (2**8), dtype=np.uint8)
+    
     if args.tile:
-        assert height % TILE_DIM == 0 and (height * 2) % TILE_DIM == 0
-        ## save tiles
+        ## save image
         try:
-            for row in range(int(height / TILE_DIM)):
-                for col in range(int(width / TILE_DIM)):
-                    fname = args.output.split('.')
-                    cv2.imwrite(fname[0] +
-                        '_' + str(row) +
-                        '_' + str(col) +
-                        '.' +
-                        fname[-1],
-                        image[row*TILE_DIM:row*TILE_DIM+TILE_DIM,
-                              col*TILE_DIM:col*TILE_DIM+TILE_DIM])
+            cv2.imwrite(args.output, image)
         except cv2.error as e:
             print(e)
+            
+            
+        ## TODO: add kubi to requirements.txt    
+        subprocess.run(['kubi',
+                        '-s', '2048',
+                        '-co', 'tile_size=512',
+                        '-co', 'depth=onetile',
+                        '-co', 'overlap=0',
+                        '-co', 'layout=google',
+                        '-co', 'suffix=.jpg[Q=75]',
+                        '-f', 'r', 'l', 'u', 'd', 'f', 'b',
+                        args.output,
+                        args.output.split('.')[0] + '.dz'])
+
+#     if args.tile:
+#         assert height % TILE_DIM == 0 and (height * 2) % TILE_DIM == 0
+#         ## save tiles
+#         try:
+#             for row in range(int(height / TILE_DIM)):
+#                 for col in range(int(width / TILE_DIM)):
+#                     fname = args.output.split('.')
+#                     cv2.imwrite(fname[0] +
+#                         '_' + str(row) +
+#                         '_' + str(col) +
+#                         '.' +
+#                         fname[-1],
+#                         image[row*TILE_DIM:row*TILE_DIM+TILE_DIM,
+#                               col*TILE_DIM:col*TILE_DIM+TILE_DIM])
+#         except cv2.error as e:
+#             print(e)
 
     else:
         ## save image
