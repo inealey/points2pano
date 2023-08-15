@@ -60,9 +60,9 @@ def drawPoints(start, length, canvas_shape, theta, phi, radius, color):
             color = (int(color[i][0]), int(color[i][1]), int(color[i][2])),
             thickness = cv2.FILLED,
             shift = PRECISION )
-
-
-if __name__ == '__main__':
+        
+## run the program
+def main():
     ## set up argparser
     parser = argparse.ArgumentParser(
         prog = 'points2pano',
@@ -149,6 +149,8 @@ if __name__ == '__main__':
     ## allocate shared memory for output array
     shm_output = createSharedMemoryArray(background,
                                               CANVAS_ARRAY_NAME, np.uint16)
+    
+    del background ## free background
 
     ## draw the points
     ## compute start and length for indexing points array
@@ -204,6 +206,10 @@ if __name__ == '__main__':
     ## clean up shm
     releaseShared(CANVAS_ARRAY_NAME)
 
+
+if __name__ == '__main__':
+    main()
+    
 ## REFERENCE:
 ## https://stackoverflow.com/questions/15658145/how-to-share-work-roughly-evenly-between-processes-in-mpi-despite-the-array-size
 ## from: https://luis-sena.medium.com/sharing-big-numpy-arrays-across-python-processes-abf0dc2a0ab2
