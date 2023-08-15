@@ -1,5 +1,5 @@
 # points2pano
-LiDAR point clouds to 360 panorama, **Feb 2023**
+LiDAR point clouds to 360 panorama, **Updated Aug 2023**
 
 inealey@ucsd.edu
 
@@ -40,7 +40,7 @@ This results in a natural looking view of the point cloud which simulates standi
 
 ### Usage:
 ```
-usage: points2pano [-h] [-i INPUT] [-o OUTPUT] [-n THREADS] [-y HEIGHT] [-s SIZE] [--skybox] [--no-skybox]
+usage: points2pano [-h] [-i INPUT] [-o OUTPUT] [-n THREADS] [-y HEIGHT] [-s SIZE] [--scale-colors] [--tile] [--no-skybox] [--fullres]
 
 project point clouds to 360 photo sphere
 
@@ -55,8 +55,10 @@ optional arguments:
   -y HEIGHT, --height HEIGHT
                         size (height) of the output image. width = 2 * height
   -s SIZE, --size SIZE  point size multiplier
-  --skybox              draw sky backgound behind point cloud
-  --no-skybox           don't include the skybox
+  --scale-colors        scale .laz/.las RGB values from 8 to 16 bits per channel
+  --tile                tile the final image
+  --no-skybox           omit sky backgound
+  --fullres             output 16 bit color (use tif or png)
   ```
   
 ### Performance:
@@ -69,3 +71,4 @@ Leveraging all 8 cores on my machine, I can project the "full resolution" 7.5M p
  
 ### TO DO:
 - still some issues on Windows due to the shared memory implementation.
+- expose kubi arguments to user when tiling
