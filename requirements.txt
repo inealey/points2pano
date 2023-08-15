@@ -2,3 +2,4 @@ numpy
 laspy[laszip]
 opencv-python
 tqdm
+git+https://github.com/indus/kubi.git

@@ -1,7 +1,7 @@
 ### POINTS2PANO ###
 ### Isaac Nealey 2023 ###
 ### project a LiDAR point cloud to a sphere to see panorama
-### assumes LAS/LAZ file contains:
+### LAS/LAZ file should contain:
 ### 64-bit floating-point coordinates
 ### 16-bit integer RGB channels
 
@@ -18,7 +18,7 @@ import subprocess
 NUM_WORKERS = cpu_count()
 CANVAS_ARRAY_NAME = 'npsharedcanvas'
 SKYBOX_PATH = 'skybox/skybox2.jpg'
-TILE_DIM = 256 ## what size tiles to use (if tiling)
+TILE_DIM = 512 ## what size tiles to use (if tiling)
 PRECISION = 16 ## how far to bitshift when plotting pts
 ## 16 is approx precision of a 64-bit float
 FACTOR = 2 ** PRECISION ## bitshift factor (sig figs)
@@ -77,10 +77,14 @@ if __name__ == '__main__':
                 help='size (height) of the output image. width = 2 * height')
     parser.add_argument('-s', '--size', type=int, default=3,
                 help='point size multiplier')
+    parser.add_argument('--scale-colors', action='store_true', default=False,
+                help='scale .laz/.las RGB values from 8 to 16 bits per channel')
     parser.add_argument('--tile', action='store_true', default=False,
                 help='tile the final image')
-    parser.add_argument('--skybox', action='store_true', default=True,
-                help='draw sky backgound behind point cloud')
+    parser.add_argument('--no-skybox', action='store_true', default=False,
+                help='omit sky backgound')
+    parser.add_argument('--fullres', action='store_true', default=False,
+                help='output 16 bit color (use tif or png)')
     args = parser.parse_args()
 
     if args.threads > NUM_WORKERS: exit('too many threads requested')
@@ -96,20 +100,22 @@ if __name__ == '__main__':
     point_count = las.header.point_count
 
     ## skybox or black background.
-    if not args.skybox:
+    if args.no_skybox:
         background = np.zeros([height, width, 3], dtype = np.uint16)
     else:
         try:
-            background = cv2.imread(SKYBOX_PATH)
-            ## scale 8-bit skybox to 16-bit color.
-            ## !! don't do this w/16-bit skybox !!
-            ## !! or if input las has 8 bit color !!
-            # background = np.array(cv2.resize(background,
-            #             (width, height)) / (2**8) * (2**16), dtype = np.uint16)
-
-            ## resize image but don't scale colors
-            background = np.array(cv2.resize(background,
-                        (width, height)), dtype = np.uint16)
+            background = cv2.imread(SKYBOX_PATH, -1)
+            
+            if background.dtype == 'uint8':
+                ## resize skybox and 
+                ## scale 8-bit to 16-bit color.
+                background = np.array(cv2.resize(background * ( 2**8 ),
+                            (width, height)), dtype = np.uint16)
+                
+            elif background.dtype == 'uint16':
+                ## resize skybox but don't scale colors
+                background = np.array(cv2.resize(background,
+                            (width, height)), dtype = np.uint16)
 
         except cv2.error as e:
             print(e)
@@ -133,6 +139,10 @@ if __name__ == '__main__':
 
     color = np.swapaxes(np.array((las.blue, las.green, las.red),
                                  dtype = np.uint16), 0, 1) # color of glyph
+        
+    ## if requested, scale 8 bit colors to 16 bit
+    if args.scale_colors:
+        color = color * (2**8)
 
     del las ## explicit free, don't need point cloud anymore
 
@@ -157,50 +167,35 @@ if __name__ == '__main__':
 
     ## access the shared memory
     image = np.ndarray(out_shape, dtype = np.uint16, buffer = shm_output.buf)
-
-    ## force 8 bit color
-    ## TODO make this an option, not every time. lots of places to change :(
-    image = np.array(image / (2**16) * (2**8), dtype=np.uint8)
+    
+    ## scale to 8 bit color by default
+    if not args.fullres:
+        image = np.array(image / (2**8), dtype=np.uint8)
     
     if args.tile:
-        ## save image
+        
+        ## first save equirectangular image
         try:
             cv2.imwrite(args.output, image)
         except cv2.error as e:
             print(e)
-            
-            
-        ## TODO: add kubi to requirements.txt    
+        
+        ## then process tiled image with kubi for faster loading
+        ## using fixed parameters from kubi/marzipano example
+        ## might want to expose these to user evenutally 
         subprocess.run(['kubi',
                         '-s', '2048',
-                        '-co', 'tile_size=512',
+                        '-co', 'tile_size=' + str(TILE_DIM),
                         '-co', 'depth=onetile',
                         '-co', 'overlap=0',
                         '-co', 'layout=google',
-                        '-co', 'suffix=.jpg[Q=75]',
+                        '-co', 'suffix=.jpg[Q=95]',
                         '-f', 'r', 'l', 'u', 'd', 'f', 'b',
                         args.output,
                         args.output.split('.')[0] + '.dz'])
 
-#     if args.tile:
-#         assert height % TILE_DIM == 0 and (height * 2) % TILE_DIM == 0
-#         ## save tiles
-#         try:
-#             for row in range(int(height / TILE_DIM)):
-#                 for col in range(int(width / TILE_DIM)):
-#                     fname = args.output.split('.')
-#                     cv2.imwrite(fname[0] +
-#                         '_' + str(row) +
-#                         '_' + str(col) +
-#                         '.' +
-#                         fname[-1],
-#                         image[row*TILE_DIM:row*TILE_DIM+TILE_DIM,
-#                               col*TILE_DIM:col*TILE_DIM+TILE_DIM])
-#         except cv2.error as e:
-#             print(e)
-
     else:
-        ## save image
+        ## just save image without tiling
         try:
             cv2.imwrite(args.output, image)
         except cv2.error as e:
