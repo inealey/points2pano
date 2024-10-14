@@ -1,5 +1,5 @@
 # points2pano
-LiDAR point clouds to 360 panorama, **Updated Aug 2023**
+LiDAR point clouds to 360 panorama, **Updated Nov 2024**
 
 inealey@ucsd.edu
 
