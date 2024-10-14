@@ -18,6 +18,7 @@ import subprocess
 NUM_WORKERS = cpu_count()
 CANVAS_ARRAY_NAME = 'npsharedcanvas'
 SKYBOX_PATH = 'skybox/skybox2.jpg'
+# SKYBOX_PATH = 'skybox/skybox_04.jpg'
 TILE_DIM = 512 ## what size tiles to use (if tiling)
 PRECISION = 16 ## how far to bitshift when plotting pts
 ## 16 is approx precision of a 64-bit float
@@ -58,7 +59,8 @@ def drawPoints(start, length, canvas_shape, theta, phi, radius, color):
             (theta[i], phi[i]),
             radius = radius[i],
             color = (int(color[i][0]), int(color[i][1]), int(color[i][2])),
-            thickness = cv2.FILLED,
+            # thickness = cv2.FILLED,
+            thickness = 1,
             shift = PRECISION )
         
 ## run the program
@@ -90,7 +92,10 @@ def main():
     if args.threads > NUM_WORKERS: exit('too many threads requested')
 
     ## read point cloud
-    las = laspy.read(args.input)
+    try:
+        las = laspy.read(args.input)
+    except FileNotFoundError as e:
+        exit(e)
 
     ## convenience vars
     procs = [] ## process list
@@ -127,8 +132,11 @@ def main():
 
     r_norm = (r - min(r)) / (max(r) - min(r))  ## normalized. 0=close 1=far.
 
-    theta = np.array(((np.arctan2(las.y, las.x) + pi) /
-                      (2 * pi) * width) * FACTOR, dtype = np.uint64) # x value
+    ## compute theta values
+    ## from right side of 'canvas' to account for handedness
+    theta = np.array( ( width * FACTOR ) - 
+                    ( ( (np.arctan2(las.y, las.x) + pi) /
+                    (2 * pi) * width ) * FACTOR ), dtype = np.uint64 ) # x value
 
     phi = np.array((np.arccos(las.z / r) / pi * height) *
                    FACTOR, dtype = np.uint64) # y value
@@ -136,6 +144,10 @@ def main():
     ## radius has linear falloff TODO better nonlinear function?
     radius = np.array(FACTOR * args.size * (1 - r_norm) + 1,
                       dtype = np.uint64) # size of glyph
+
+    ## exponential? check me..
+    # radius = np.array(FACTOR * args.size * (1 - r_norm) ** 2 + 1,
+    #                   dtype = np.uint64) # size of glyph
 
     color = np.swapaxes(np.array((las.blue, las.green, las.red),
                                  dtype = np.uint16), 0, 1) # color of glyph
