@@ -17,8 +17,7 @@ import subprocess
 # constants
 NUM_WORKERS = cpu_count()
 CANVAS_ARRAY_NAME = 'npsharedcanvas'
-SKYBOX_PATH = 'skybox/skybox2.jpg'
-# SKYBOX_PATH = 'skybox/skybox_04.jpg'
+SKYBOX_PATH = 'skybox/skybox_04.jpg'
 TILE_DIM = 512 ## what size tiles to use (if tiling)
 PRECISION = 16 ## how far to bitshift when plotting pts
 ## 16 is approx precision of a 64-bit float
@@ -59,8 +58,7 @@ def drawPoints(start, length, canvas_shape, theta, phi, radius, color):
             (theta[i], phi[i]),
             radius = radius[i],
             color = (int(color[i][0]), int(color[i][1]), int(color[i][2])),
-            # thickness = cv2.FILLED,
-            thickness = 1,
+            thickness = cv2.FILLED,
             shift = PRECISION )
         
 ## run the program
