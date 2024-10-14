@@ -17,7 +17,7 @@ import subprocess
 # constants
 NUM_WORKERS = cpu_count()
 CANVAS_ARRAY_NAME = 'npsharedcanvas'
-SKYBOX_PATH = 'skybox/skybox_04.jpg'
+SKYBOX_PATH = 'skybox/skybox_02.jpg'
 TILE_DIM = 512 ## what size tiles to use (if tiling)
 PRECISION = 16 ## how far to bitshift when plotting pts
 ## 16 is approx precision of a 64-bit float
