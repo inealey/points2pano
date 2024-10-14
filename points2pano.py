@@ -69,7 +69,7 @@ def main():
         description = 'project point clouds to 360 photo sphere' )
     parser.add_argument('-i', '--input', type=str, default='example/example.las',
                 help='path to .las/.laz LiDAR point cloud file')
-    parser.add_argument('-o', '--output', type=str, default='output.png',
+    parser.add_argument('-o', '--output', type=str, default='output.jpg',
                 help='name of output image file')
     parser.add_argument('-n', '--threads', type=int, default=1,
                 help='number of threads')

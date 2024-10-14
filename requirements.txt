@@ -1,5 +1,5 @@
 numpy
 laspy[laszip]
-opencv-python
+opencv-python-headless
 tqdm
 git+https://github.com/indus/kubi.git
