@@ -112,13 +112,12 @@ def main():
             if background.dtype == 'uint8':
                 ## resize skybox and 
                 ## scale 8-bit to 16-bit color.
-                background = np.array(cv2.resize(background * ( 2**8 ),
-                            (width, height)), dtype = np.uint16)
+                background = np.array(background, dtype=np.uint16)
+                background = cv2.resize(background * ( 2**8 ), (width, height))
                 
             elif background.dtype == 'uint16':
                 ## resize skybox but don't scale colors
-                background = np.array(cv2.resize(background,
-                            (width, height)), dtype = np.uint16)
+                background = cv2.resize(background, (width, height))
 
         except cv2.error as e:
             print(e)
