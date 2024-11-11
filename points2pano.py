@@ -200,7 +200,7 @@ def main():
                         '-co', 'depth=onetile',
                         '-co', 'overlap=0',
                         '-co', 'layout=google',
-                        '-co', 'suffix=.jpg[Q=95]',
+                        '-co', 'suffix=.jpg[Q=75]',
                         '-f', 'r', 'l', 'u', 'd', 'f', 'b',
                         args.output,
                         args.output.split('.')[0] + '.dz'])
